@@ -36,6 +36,35 @@
             100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
         }
 
+        /* --- КНОПКА МУЗЫКИ --- */
+        .music-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+            opacity: 0.7;
+        }
+        .music-btn:active {
+            transform: scale(0.9);
+        }
+        .music-btn.playing {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+            border-color: #d4af37;
+        }
+
         .ring-icon {
             font-size: 3rem;
             margin-bottom: 5px;
@@ -68,7 +97,6 @@
             padding-bottom: 10px;
         }
 
-        /* --- СТИЛИ ДЛЯ ФОТО --- */
         .photo-container {
             z-index: 2;
             margin-bottom: 25px;
@@ -77,14 +105,13 @@
         }
 
         .couple-photo {
-            width: 170px; /* Размер фото (ширина) */
-            height: 170px; /* Размер фото (высота) */
-            object-fit: cover; /* Обрезает фото под круг без искажения пропорций */
-            border-radius: 50%; /* Делает фото круглым */
-            border: 3px solid #d4af37; /* Золотая рамка */
-            box-shadow: 0 0 25px rgba(212, 175, 55, 0.5); /* Золотое свечение вокруг */
+            width: 170px;
+            height: 170px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #d4af37;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
         }
-        /* ------------------------ */
 
         .timer-container {
             display: flex;
@@ -135,9 +162,39 @@
             background: rgba(212, 175, 55, 0.15);
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
         }
+
+        /* --- АНИМАЦИЯ СТИКЕРОВ --- */
+        .celebration-sticker {
+            position: absolute;
+            font-size: 2.5rem;
+            z-index: 9999;
+            pointer-events: none; /* Чтобы они не перекрывали клики */
+            animation: explode 1.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(1.5);
+                opacity: 0;
+            }
+        }
+        /* ------------------------- */
     </style>
 </head>
 <body>
+
+    <audio id="bg-music" loop>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="music-btn" id="music-toggle" onclick="toggleMusic()">🎵</div>
 
     <script>
         for(let i=0; i<30; i++) {
@@ -156,12 +213,10 @@
     <div class="names">Евгений & Ульяна</div>
     <div class="date-text">30 марта 2030 года</div>
 
-    <!-- === БЛОК С ФОТОГРАФИЕЙ === -->
     <div class="photo-container">
-        <!-- ВСТАВЬ СВОЮ ССЫЛКУ ВМЕСТО ТОЙ, ЧТО В КАВЫЧКАХ ПОСЛЕ src= -->
-        <img class="couple-photo" src="we.jpg" alt="Евгений и Ульяна">
+        <!-- Твоя ссылка на фото -->
+        <img class="couple-photo" src="photo.jpg" alt="Евгений и Ульяна">
     </div>
-    <!-- ========================= -->
 
     <div class="timer-container" id="timer-ui">
         <div class="time-box">
@@ -182,12 +237,30 @@
         </div>
     </div>
 
-    <button class="btn" onclick="closeWebApp()">Ждём с нетерпением!</button>
+    <button class="btn" id="main-btn" onclick="closeWebApp()">Ждём с нетерпением!</button>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
         tg.setHeaderColor('#0a0a0a'); 
+
+        const audio = document.getElementById("bg-music");
+        const musicBtn = document.getElementById("music-toggle");
+        let isPlaying = false;
+        audio.volume = 0.3; 
+
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicBtn.classList.remove("playing");
+                musicBtn.style.opacity = "0.7";
+            } else {
+                audio.play();
+                musicBtn.classList.add("playing");
+                musicBtn.style.opacity = "1";
+            }
+            isPlaying = !isPlaying;
+        }
 
         const targetDate = new Date("2030-03-30T00:00:00").getTime();
 
@@ -214,9 +287,45 @@
         setInterval(updateTimer, 1000);
         updateTimer();
 
+        // --- ЛОГИКА САЛЮТА И ЗАКРЫТИЯ ---
+        let isClosing = false; // Защита от двойного клика
+
         function closeWebApp() {
-            tg.sendData("waiting");
+            if (isClosing) return; 
+            isClosing = true;
+
+            const btn = document.getElementById("main-btn");
+            btn.innerText = "До встречи! 🤍"; // Меняем текст на кнопке для эффекта
+            
+            // Набор праздничных стикеров
+            const emojis = ['🎉', '💍', '🥂', '🕊️', '❤️', '✨', '💐'];
+            
+            // Генерируем 50 стикеров
+            for (let i = 0; i < 50; i++) {
+                let sticker = document.createElement('div');
+                sticker.className = 'celebration-sticker';
+                sticker.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                // Стартовая позиция (примерно от центра кнопки)
+                sticker.style.left = '50%';
+                sticker.style.bottom = '10%';
+                
+                // Случайное направление разлета (tx и ty передаются в CSS анимацию)
+                let tx = (Math.random() - 0.5) * 500 + 'px'; // Разлет влево-вправо
+                let ty = (Math.random() - 1) * 600 + 'px';   // Разлет вверх
+                
+                sticker.style.setProperty('--tx', tx);
+                sticker.style.setProperty('--ty', ty);
+                
+                document.body.appendChild(sticker);
+            }
+
+            // Ждем 1.5 секунды, пока пройдет анимация, и закрываем Web App
+            setTimeout(() => {
+                tg.sendData("waiting");
+            }, 1500);
         }
+        // --------------------------------
     </script>
 </body>
 </html>
